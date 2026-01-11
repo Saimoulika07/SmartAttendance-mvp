@@ -1,40 +1,26 @@
 from fastapi import APIRouter
-import sqlite3
-import gspread
-from google.oauth2.service_account import Credentials
+from app.services.sheets import get_worksheet
 
-router = APIRouter(prefix="/analytics")
+router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
-SCOPES = [
-    "https://www.googleapis.com/auth/spreadsheets",
-    "https://www.googleapis.com/auth/drive"
-]
-
-SPREADSHEET_ID = "1Q0Ta9Q79GCy85HZL0ew3T3Cm3uORJgllLc6WJTn9m1c"
+SHEET_NAME = "Attendance_MVP_Database"
 
 @router.post("/export")
-def export_attendance():
-    conn = sqlite3.connect("attendance.db")
-    cur = conn.cursor()
+def export_analytics():
+    attendance_ws = get_worksheet(SHEET_NAME, "Attendance")
+    analytics_ws = get_worksheet(SHEET_NAME, "Analytics")
 
-    cur.execute("""
-        SELECT session_id, COUNT(*) 
-        FROM attendance 
-        GROUP BY session_id
-    """)
-    data = cur.fetchall()
+    records = attendance_ws.get_all_records()
 
-    creds = Credentials.from_service_account_file(
-        "service_account.json",
-        scopes=SCOPES
-    )
-    client = gspread.authorize(creds)
-    sheet = client.open_by_key(SPREADSHEET_ID).worksheet("Analytics")
+    counts = {}
+    for r in records:
+        sid = r["SessionID"]
+        counts[sid] = counts.get(sid, 0) + 1
 
-    sheet.clear()
-    sheet.append_row(["SessionID", "PresentCount"])
+    analytics_ws.clear()
+    analytics_ws.append_row(["SessionID", "PresentCount"])
 
-    for row in data:
-        sheet.append_row(list(row))
+    for sid, count in counts.items():
+        analytics_ws.append_row([sid, count])
 
-    return {"status": "Exported to Google Sheets"}
+    return {"status": "Analytics exported"}

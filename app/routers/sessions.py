@@ -1,21 +1,28 @@
 from fastapi import APIRouter
 from datetime import datetime, timedelta
 import uuid
-from database import conn, cursor
+from app.services.sheets import get_worksheet
 
-router = APIRouter(prefix="/session")
+router = APIRouter(prefix="/session", tags=["Session"])
+
+SHEET_NAME = "Attendance_MVP_Database"
 
 @router.post("/create")
 def create_session(class_id: str):
+    ws = get_worksheet(SHEET_NAME, "Sessions")
+
     session_id = str(uuid.uuid4())
     start = datetime.now()
     end = start + timedelta(minutes=5)
 
-    cursor.execute(
-        "INSERT INTO sessions VALUES (?, ?, ?, ?, ?)",
-        (session_id, class_id, start.isoformat(), end.isoformat(), 1)
-    )
-    conn.commit()
+    ws.append_row([
+        session_id,
+        class_id,
+        start.strftime("%Y-%m-%d"),
+        start.strftime("%H:%M"),
+        end.strftime("%H:%M"),
+        "YES"
+    ])
 
     return {
         "session_id": session_id,

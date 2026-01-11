@@ -1,12 +1,6 @@
-# virtual environment
 venv/
-
-# python cache
 __pycache__/
 *.pyc
-
-# secrets
 service_account.json
-
-# local database
 attendance.db
+.env
