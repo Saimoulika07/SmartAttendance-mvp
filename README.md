@@ -34,6 +34,10 @@ python -m uvicorn main:app --reload
 6. Open API docs:
 http://127.0.0.1:8000/docs
 
+## Live Backend
+Base URL: https://smartattendance-mvp.onrender.com
+Swagger Docs:
+https://smartattendance-mvp.onrender.com/docs
 
 ## Notes
 - This is a backend MVP.
