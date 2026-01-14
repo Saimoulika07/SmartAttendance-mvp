@@ -80,4 +80,5 @@ This project consists of three main parts:
 ## 💻 Run Locally (Optional)
 
 pip install -r requirements.txt
+
 uvicorn main:app --reload
