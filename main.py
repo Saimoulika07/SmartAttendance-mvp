@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from app.routers import sessions, attendance, analytics
 import os
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Attendance MVP")
 
@@ -11,6 +12,14 @@ app.include_router(analytics.router)
 @app.get("/")
 def root():
     return {"status": "Backend running"}
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
