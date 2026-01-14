@@ -4,12 +4,14 @@ import gspread
 from google.oauth2.service_account import Credentials
 
 def get_gspread_client():
-    service_account_info = json.loads(
-        os.environ.get["GOOGLE_SERVICE_ACCOUNT_JSON"]
-    )
+    raw = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON")
+    if not raw:
+        raise RuntimeError("GOOGLE_SERVICE_ACCOUNT_JSON not set")
 
-    scope = [
-        "https://spreadsheets.google.com/feeds",
+    service_account_info = json.loads(raw)
+
+    scopes = [
+        "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive"
     ]
 
