@@ -3,12 +3,22 @@ import json
 import gspread
 from google.oauth2.service_account import Credentials
 
+_client = None
+
 def get_gspread_client():
-    raw = os.environ.get("GOOGLE_SERVICE_ACCOUNT_JSON")
+    global _client
+
+    if _client:
+        return _client
+
+    raw = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
     if not raw:
         raise RuntimeError("GOOGLE_SERVICE_ACCOUNT_JSON not set")
 
-    service_account_info = json.loads(raw)
+    try:
+        service_account_info = json.loads(raw)
+    except Exception as e:
+        raise RuntimeError(f"Invalid service account JSON: {e}")
 
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
@@ -16,7 +26,18 @@ def get_gspread_client():
     ]
 
     creds = Credentials.from_service_account_info(
-        service_account_info, scopes=scopes
+        service_account_info,
+        scopes=scopes
     )
 
-    return gspread.authorize(creds)
+    _client = gspread.authorize(creds)
+    return _client
+
+
+def get_sheet(sheet_name: str):
+    sheet_id = os.getenv("GOOGLE_SHEET_ID")
+    if not sheet_id:
+        raise RuntimeError("GOOGLE_SHEET_ID not set")
+
+    client = get_gspread_client()
+    return client.open_by_key(sheet_id).worksheet(sheet_name)
