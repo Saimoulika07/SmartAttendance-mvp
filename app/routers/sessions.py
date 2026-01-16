@@ -2,7 +2,8 @@ from fastapi import APIRouter, HTTPException, Query
 from datetime import datetime, timedelta
 import uuid
 
-from services.sheets import get_sheet
+from app.services.sheets import get_sheet
+
 
 router = APIRouter(prefix="/session", tags=["Session"])
 

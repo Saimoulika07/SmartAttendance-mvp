@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from datetime import datetime
-from app.services.sheets import get_worksheet
+from app.services.sheets import get_sheet
+
 
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
 
@@ -8,8 +9,8 @@ SHEET_NAME = "Attendance_MVP_Database"
 
 @router.post("/mark")
 def mark_attendance(session_id: str, student_email: str):
-    sessions_ws = get_worksheet(SHEET_NAME, "Sessions")
-    attendance_ws = get_worksheet(SHEET_NAME, "Attendance")
+    sessions_ws = get_sheet(SHEET_NAME, "Sessions")
+    attendance_ws = get_sheet(SHEET_NAME, "Attendance")
 
     sessions = sessions_ws.get_all_records()
     session = next((s for s in sessions if s["SessionID"] == session_id), None)

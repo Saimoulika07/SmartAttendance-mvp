@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.services.sheets import get_worksheet
+from app.services.sheets import get_sheet
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
@@ -7,8 +7,8 @@ SHEET_NAME = "Attendance_MVP_Database"
 
 @router.post("/export")
 def export_analytics():
-    attendance_ws = get_worksheet(SHEET_NAME, "Attendance")
-    analytics_ws = get_worksheet(SHEET_NAME, "Analytics")
+    attendance_ws = get_sheet(SHEET_NAME, "Attendance")
+    analytics_ws = get_sheet(SHEET_NAME, "Analytics")
 
     records = attendance_ws.get_all_records()
 
