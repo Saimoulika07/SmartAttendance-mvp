@@ -2,37 +2,29 @@ from fastapi import APIRouter, HTTPException
 from datetime import datetime
 from app.services.sheets import get_sheet
 
-
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
 
-SHEET_NAME = "Attendance_MVP_Database"
-
 @router.post("/mark")
-def mark_attendance(session_id: str, student_email: str):
-    sessions_ws = get_sheet(SHEET_NAME, "Sessions")
-    attendance_ws = get_sheet(SHEET_NAME, "Attendance")
+def mark_attendance(
+    session_id: str,
+    student_email: str
+):
+    try:
+        sheet = get_sheet("Attendance")
 
-    sessions = sessions_ws.get_all_records()
-    session = next((s for s in sessions if s["SessionID"] == session_id), None)
+        sheet.append_row([
+            session_id,
+            student_email,
+            datetime.utcnow().isoformat(),
+            "PRESENT"
+        ])
 
-    if not session or session["Active"] != "YES":
-        raise HTTPException(status_code=400, detail="Invalid session")
+        return {
+            "message": "Attendance marked",
+            "session_id": session_id,
+            "student_email": student_email
+        }
 
-    if datetime.now().strftime("%H:%M") > session["EndTime"]:
-        raise HTTPException(status_code=400, detail="Session expired")
-
-    records = attendance_ws.get_all_records()
-    for r in records:
-        if r["SessionID"] == session_id and r["StudentEmail"] == student_email:
-            raise HTTPException(status_code=400, detail="Already marked")
-
-    attendance_ws.append_row([
-        session["Date"],
-        session["ClassID"],
-        session_id,
-        student_email,
-        datetime.now().isoformat(),
-        "Present"
-    ])
-
-    return {"status": "Attendance marked"}
+    except Exception as e:
+        print("ATTENDANCE ERROR:", e)
+        raise HTTPException(status_code=500, detail=str(e))
