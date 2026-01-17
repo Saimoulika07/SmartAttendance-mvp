@@ -1,30 +1,41 @@
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 from datetime import datetime
 from app.services.sheets import get_sheet
 
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
 
-@router.post("/mark")
-def mark_attendance(
-    session_id: str,
+class AttendanceRequest(BaseModel):
+    session_id: str
     student_email: str
-):
-    try:
-        sheet = get_sheet("Attendance")
 
-        sheet.append_row([
-            session_id,
-            student_email,
-            datetime.utcnow().isoformat(),
-            "PRESENT"
-        ])
+@router.post("/mark")
+def mark_attendance(data: AttendanceRequest):
+    sheet = get_sheet("Attendance")
+    records = sheet.get_all_records()
 
-        return {
-            "message": "Attendance marked",
-            "session_id": session_id,
-            "student_email": student_email
-        }
+    # 🔒 DUPLICATE CHECK
+    for row in records:
+        if (
+            row.get("session_id") == data.session_id
+            and row.get("student_email") == data.student_email
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="Attendance already marked for this session"
+            )
 
-    except Exception as e:
-        print("ATTENDANCE ERROR:", e)
-        raise HTTPException(status_code=500, detail=str(e))
+    # ✅ If not duplicate, mark attendance
+    sheet.append_row([
+        data.session_id,
+        data.student_email,
+        datetime.utcnow().isoformat(),
+        "PRESENT",
+        ""  # class_id if auto-filled later
+    ])
+
+    return {
+        "message": "Attendance marked successfully",
+        "session_id": data.session_id,
+        "student_email": data.student_email
+    }
