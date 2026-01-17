@@ -4,17 +4,18 @@ let qr;
 let countdown;
 
 function createSession() {
-  const classId = document.getElementById("classId").value;
+  const classId = document.getElementById("classId").value.trim();
+  const subjectCode = document.getElementById("subjectCode").value.trim();
   const output = document.getElementById("output");
   const qrDiv = document.getElementById("qr");
   const timerDiv = document.getElementById("timer");
 
-  if (!classId) {
-    output.innerText = "Enter Class ID ❌";
+  if (!classId || !subjectCode) {
+    output.innerText = "Enter Class ID and Subject Code ❌";
     return;
   }
 
-  fetch(`${API_BASE}/session/create?class_id=${classId}`, {
+  fetch(`${API_BASE}/session/create?class_id=${classId}&subject_code=${subjectCode}`, {
     method: "POST"
   })
     .then(res => res.json())
@@ -24,29 +25,26 @@ function createSession() {
       output.innerHTML = `
         <strong>Session Created ✅</strong><br>
         <b>Session ID:</b> ${sessionId}<br>
+        <b>Subject:</b> ${subjectCode}<br>
         <small>QR valid for 5 minutes</small>
       `;
 
-      // Clear old QR
       qrDiv.innerHTML = "";
       timerDiv.innerText = "";
 
-      // Generate QR
-      qr = new QRCode(qrDiv, {
+      new QRCode(qrDiv, {
         text: sessionId,
         width: 200,
         height: 200
       });
 
-      // Start 5-min countdown
       let seconds = 300;
       clearInterval(countdown);
 
       countdown = setInterval(() => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        timerDiv.innerText = `Expires in ${mins}:${secs.toString().padStart(2, "0")}`;
-
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        timerDiv.innerText = `Expires in ${m}:${s.toString().padStart(2, "0")}`;
         seconds--;
         if (seconds < 0) {
           clearInterval(countdown);
