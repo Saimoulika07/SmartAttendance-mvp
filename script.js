@@ -1,21 +1,24 @@
 const API_BASE = "https://smartattendance-mvp.onrender.com";
+
 let rollToEmail = {};
 
-// Load students.csv
+// Load students.csv and build roll → email map
 fetch("students.csv")
-  .then(response => response.text())
-  .then(data => {
-    const rows = data.split("\n").slice(1); // skip header
+  .then(res => res.text())
+  .then(text => {
+    const rows = text.split("\n").slice(1); // skip header
     rows.forEach(row => {
+      if (!row.trim()) return;
       const cols = row.split(",");
-      if (cols.length >= 2) {
-        const roll = cols[0].trim();
-        const email = cols[1].trim();
-        if (roll && email) {
-          rollToEmail[roll] = email;
-        }
+      const roll = cols[0]?.trim();
+      const email = cols[1]?.trim();
+      if (roll && email) {
+        rollToEmail[roll] = email;
       }
     });
+  })
+  .catch(err => {
+    console.error("Failed to load students.csv", err);
   });
 
 function markAttendance() {
@@ -39,13 +42,17 @@ function markAttendance() {
     method: "POST"
   })
     .then(res => {
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        return res.json().then(err => {
+          throw new Error(err.detail || "Attendance already marked");
+        });
+      }
       return res.json();
     })
     .then(() => {
       result.innerText = "Attendance marked ✅";
     })
-    .catch(() => {
-      result.innerText = "Error marking attendance ❌";
+    .catch(err => {
+      result.innerText = err.message;
     });
 }
