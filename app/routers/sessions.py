@@ -12,19 +12,21 @@ def create_session(class_id: str = Query(...)):
 
         session_id = str(uuid.uuid4())
         now = datetime.utcnow()
-        end_time = now + timedelta(hours=1)
+
+        # 🔒 Timed QR expiry (5 minutes)
+        expiry_time = now + timedelta(minutes=5)
 
         sheet.append_row([
             session_id,
             class_id,
             now.isoformat(),
-            end_time.isoformat()
+            expiry_time.isoformat()
         ])
 
         return {
             "session_id": session_id,
             "class_id": class_id,
-            "expires_at": end_time.isoformat()
+            "expires_at": expiry_time.isoformat()
         }
 
     except Exception as e:
