@@ -2,8 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Faculty Dashboard</title>
+
+  <!-- Chart.js (REQUIRED) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -38,13 +42,9 @@
 
 <button onclick="createSession()">Create Session</button>
 
-<hr>
+<p><strong>Session ID:</strong> <span id="sessionId"></span></p>
 
-<h3>Active Session ID</h3>
-<p id="sessionId" style="font-weight:bold;color:green;"></p>
-
-<h3>QR Code (optional)</h3>
-<img id="qrFrame" width="220" height="220" />
+<img id="qrFrame" width="200" />
 
 <hr>
 
@@ -52,12 +52,9 @@
 
 <button onclick="loadFacultyAnalytics()">Load Analytics</button>
 
-<div id="facultyAnalytics" style="margin-top:15px;">
-  <p><strong>Total Students:</strong> <span id="totalStudents">-</span></p>
-  <p><strong>Present:</strong> <span id="presentCount">-</span></p>
-  <p><strong>Absent:</strong> <span id="absentCount">-</span></p>
-</div>
+<p id="facultyStats"></p>
 
+<canvas id="facultyChart" width="300" height="300"></canvas>
 
 <script src="script.js"></script>
 </body>
