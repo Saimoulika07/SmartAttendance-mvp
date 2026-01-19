@@ -11,36 +11,33 @@ def mark_attendance(session_id: str, student_email: str):
         attendance_sheet = get_sheet("Attendance")
         sessions_sheet = get_sheet("Sessions")
 
-        # 🔹 Fetch all sessions
+        # 🔹 Fetch sessions ONCE
         sessions = sessions_sheet.get_all_records()
-        session = next(
-            (s for s in sessions if s.get("session_id") == session_id),
-            None
-        )
+        session_map = {s["session_id"]: s for s in sessions}
 
+        session = session_map.get(session_id)
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
 
-        # 🔹 Check expiry (QR time window)
+        # 🔹 Expiry check (QR window)
         expiry_time = session.get("expiry_time")
         if expiry_time:
-            expiry = datetime.fromisoformat(expiry_time)
-            if datetime.utcnow() > expiry:
+            if datetime.utcnow() > datetime.fromisoformat(expiry_time):
                 raise HTTPException(
                     status_code=400,
                     detail="Attendance window closed"
                 )
 
-        # 🔹 Prevent duplicate attendance
+        # 🔹 Prevent duplicates (single pass)
         records = attendance_sheet.get_all_records()
         for row in records:
             if (
-                row.get("session_id") == session_id
-                and row.get("student_email") == student_email
+                row["session_id"] == session_id
+                and row["student_email"] == student_email
             ):
                 raise HTTPException(
                     status_code=400,
-                    detail="Attendance already marked for this session"
+                    detail="Attendance already marked"
                 )
 
         # 🔹 Mark attendance
@@ -53,9 +50,10 @@ def mark_attendance(session_id: str, student_email: str):
         ])
 
         return {
-            "message": "Attendance marked successfully",
+            "status": "success",
             "session_id": session_id,
-            "student_email": student_email
+            "student": student_email,
+            "marked_at": datetime.utcnow().isoformat()
         }
 
     except HTTPException:

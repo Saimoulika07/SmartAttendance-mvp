@@ -7,23 +7,26 @@ router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 @router.get("/student")
 def student_analytics(student_email: str = Query(...)):
-    attendance = get_sheet("Attendance").get_all_values()
-    sessions = get_sheet("Sessions").get_all_values()
+    attendance = get_sheet("Attendance").get_all_records()
+    sessions = get_sheet("Sessions").get_all_records()
 
-    session_subject = {}
-    for row in sessions[1:]:
-        session_subject[row[0]] = row[5]  # session_id → subject_code
+    session_subject = {
+        s["session_id"]: s.get("subject_code")
+        for s in sessions
+    }
 
     subject_stats = defaultdict(lambda: {"attended": 0, "total": 0})
 
+    # total classes per subject
     for subject in session_subject.values():
-        subject_stats[subject]["total"] += 1
+        if subject:
+            subject_stats[subject]["total"] += 1
 
     attended_sessions = 0
-    for row in attendance[1:]:
-        if row[1] == student_email and row[3] == "PRESENT":
+    for row in attendance:
+        if row["student_email"] == student_email and row["status"] == "PRESENT":
             attended_sessions += 1
-            subject = session_subject.get(row[0])
+            subject = session_subject.get(row["session_id"])
             if subject:
                 subject_stats[subject]["attended"] += 1
 
@@ -32,48 +35,68 @@ def student_analytics(student_email: str = Query(...)):
 
     return {
         "student_email": student_email,
-        "total_sessions": total_sessions,
-        "attended_sessions": attended_sessions,
         "attendance_percentage": percentage,
-        "subject_wise": [
-            {
-                "subject": k,
-                "attended": v["attended"],
-                "total": v["total"]
-            }
-            for k, v in subject_stats.items()
-        ]
+        "subject_wise": subject_stats
     }
 
 
 @router.get("/faculty")
 def faculty_analytics(class_id: str, subject_code: str):
-    attendance = get_sheet("Attendance").get_all_values()
-    sessions = get_sheet("Sessions").get_all_values()
+    attendance = get_sheet("Attendance").get_all_records()
+    sessions = get_sheet("Sessions").get_all_records()
 
-    relevant_sessions = [
-        row[0] for row in sessions[1:]
-        if row[1] == class_id and row[5] == subject_code
-    ]
+    relevant_sessions = {
+        s["session_id"]
+        for s in sessions
+        if s["class_id"] == class_id and s["subject_code"] == subject_code
+    }
 
-    students = set()
-    present = 0
+    student_presence = defaultdict(set)
 
-    for row in attendance[1:]:
-        if row[0] in relevant_sessions:
-            students.add(row[1])
-            if row[3] == "PRESENT":
-                present += 1
+    for row in attendance:
+        if row["session_id"] in relevant_sessions:
+            student_presence[row["student_email"]].add(row["session_id"])
 
-    total = len(students)
-    absent = max(total - present, 0)
-    percentage = round((present / total) * 100, 2) if total else 0
+    total_students = len(student_presence)
+    total_sessions = len(relevant_sessions)
+
+    present_count = sum(
+        1 for v in student_presence.values()
+        if len(v) == total_sessions
+    )
+
+    percentage = round((present_count / total_students) * 100, 2) if total_students else 0
 
     return {
         "class_id": class_id,
         "subject_code": subject_code,
-        "total_students": total,
-        "present": present,
-        "absent": absent,
+        "total_students": total_students,
         "attendance_percentage": percentage
+    }
+
+
+@router.get("/at-risk")
+def at_risk_students(threshold: int = 75):
+    attendance = get_sheet("Attendance").get_all_records()
+    sessions = get_sheet("Sessions").get_all_records()
+
+    total_sessions = len(sessions)
+    student_attendance = defaultdict(int)
+
+    for row in attendance:
+        if row["status"] == "PRESENT":
+            student_attendance[row["student_email"]] += 1
+
+    at_risk = []
+    for student, attended in student_attendance.items():
+        percentage = (attended / total_sessions) * 100 if total_sessions else 0
+        if percentage < threshold:
+            at_risk.append({
+                "student_email": student,
+                "attendance_percentage": round(percentage, 2)
+            })
+
+    return {
+        "threshold": threshold,
+        "at_risk_students": at_risk
     }
