@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Faculty Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<h2>Faculty Session Control</h2>
+
+<label>Class</label><br>
+<select id="classSelect">
+  <option value="I-CSE_A">I-CSE_A</option>
+  <option value="II-CSE_A">II-CSE_A</option>
+  <option value="III-CSE_A">III-CSE_A</option>
+  <option value="IV-CSE_A">IV-CSE_A</option>
+</select>
+
+<br><br>
+
+<label>Subject</label><br>
+<select id="subjectSelect">
+  <option value="CSE1_MATH">Engineering Mathematics</option>
+  <option value="CSE1_PHY">Engineering Physics</option>
+  <option value="CSE1_PPS">PPS</option>
+  <option value="CSE2_DSA">DSA</option>
+  <option value="CSE2_OOPS">OOPS</option>
+  <option value="CSE2_DBMS">DBMS</option>
+  <option value="CSE3_OS">OS</option>
+  <option value="CSE3_CN">CN</option>
+  <option value="CSE3_SE">SE</option>
+  <option value="CSE4_ML">ML</option>
+</select>
+
+<br><br>
+
+<button onclick="createSession()">Create Session</button>
+
+<hr>
+
+<h3>Active Session ID</h3>
+<p id="sessionId" style="font-weight:bold;color:green;"></p>
+
+<h3>QR Code (optional)</h3>
+<img id="qrFrame" width="220" height="220" />
+
+<script src="script.js"></script>
+</body>
+</html>
