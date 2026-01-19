@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Query
 from collections import defaultdict
-from app.services.sheets import read_sheet
+from app.services.sheets import get_sheet
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 
-# ---------- EXISTING EXPORT (KEEP) ----------
+# ---------- KEEP EXISTING EXPORT ----------
 @router.get("/export")
 def export_analytics():
-    attendance = read_sheet("Attendance")
-    sessions = read_sheet("Sessions")
+    attendance = get_sheet("Attendance").get_all_values()
+    sessions = get_sheet("Sessions").get_all_values()
 
     return {
         "attendance_rows": attendance,
@@ -17,13 +17,13 @@ def export_analytics():
     }
 
 
-# ---------- NEW: STUDENT ANALYTICS (REQUIRED) ----------
+# ---------- STUDENT ANALYTICS ----------
 @router.get("/student")
 def student_analytics(
     student_email: str = Query(..., description="Student email")
 ):
-    attendance = read_sheet("Attendance")
-    sessions = read_sheet("Sessions")
+    attendance = get_sheet("Attendance").get_all_values()
+    sessions = get_sheet("Sessions").get_all_values()
 
     if not attendance or not sessions:
         return {
@@ -34,17 +34,17 @@ def student_analytics(
             "subject_wise": []
         }
 
-    # session_id -> subject_code mapping
+    # session_id → subject_code
     session_subject = {}
     for row in sessions[1:]:
         if len(row) >= 6:
             session_subject[row[0]] = row[5]
 
-    total_sessions = len(set(session_subject.keys()))
+    total_sessions = len(session_subject)
     attended_sessions = 0
     subject_stats = defaultdict(lambda: {"attended": 0, "total": 0})
 
-    for session_id, subject in session_subject.items():
+    for subject in session_subject.values():
         subject_stats[subject]["total"] += 1
 
     for row in attendance[1:]:
@@ -56,10 +56,10 @@ def student_analytics(
 
     subject_wise = []
     for subject, stats in subject_stats.items():
-        percent = (
-            round((stats["attended"] / stats["total"]) * 100, 2)
-            if stats["total"] > 0 else 0
-        )
+        percent = round(
+            (stats["attended"] / stats["total"]) * 100, 2
+        ) if stats["total"] else 0
+
         subject_wise.append({
             "subject_code": subject,
             "attended": stats["attended"],
@@ -67,10 +67,9 @@ def student_analytics(
             "percentage": percent
         })
 
-    overall_percentage = (
-        round((attended_sessions / total_sessions) * 100, 2)
-        if total_sessions > 0 else 0
-    )
+    overall_percentage = round(
+        (attended_sessions / total_sessions) * 100, 2
+    ) if total_sessions else 0
 
     return {
         "student_email": student_email,
