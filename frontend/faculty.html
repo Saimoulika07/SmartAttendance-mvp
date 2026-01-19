@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Faculty Dashboard</title>
 
-  <!-- Chart.js (REQUIRED) -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <link rel="stylesheet" href="style.css" />
@@ -42,18 +42,15 @@
 
 <button onclick="createSession()">Create Session</button>
 
-<p><strong>Session ID:</strong> <span id="sessionId"></span></p>
-
+<p><strong>Session ID:</strong> <span id="sessionId">—</span></p>
 <img id="qrFrame" width="200" />
 
 <hr>
 
 <h2>Faculty Analytics</h2>
-
 <button onclick="loadFacultyAnalytics()">Load Analytics</button>
 
 <p id="facultyStats"></p>
-
 <canvas id="facultyChart" width="300" height="300"></canvas>
 
 <script src="script.js"></script>

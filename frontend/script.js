@@ -1,31 +1,38 @@
 const BACKEND = "https://smartattendance-mvp.onrender.com";
 
-/* ================= FACULTY ================= */
+/* ========= COMMON ========= */
+
+function rollToEmail(value) {
+  if (!value) return "";
+  if (value.includes("@")) return value.trim();
+  return `${value.trim()}@aits-tpt.edu.in`;
+}
+
+/* ========= FACULTY ========= */
+
+let facultyChartInstance = null;
 
 async function createSession() {
   const classId = document.getElementById("classSelect").value;
   const subject = document.getElementById("subjectSelect").value;
 
-  try {
-    const res = await fetch(
-      `${BACKEND}/session/create?class_id=${encodeURIComponent(classId)}&subject_code=${encodeURIComponent(subject)}`,
-      { method: "POST" }
-    );
+  const res = await fetch(
+    `${BACKEND}/session/create?class_id=${classId}&subject_code=${subject}`,
+    { method: "POST" }
+  );
 
-    if (!res.ok) {
-      alert("Session creation failed");
-      return;
-    }
-
-    const data = await res.json();
-    document.getElementById("sessionId").innerText = data.session_id;
-
-    document.getElementById("qrFrame").src =
-      `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${data.session_id}`;
-
-  } catch (e) {
-    alert("Backend not reachable");
+  if (!res.ok) {
+    alert("Session creation failed");
+    return;
   }
+
+  const data = await res.json();
+
+  document.getElementById("sessionId").innerText = data.session_id;
+  document.getElementById("qrFrame").src =
+    `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${data.session_id}`;
+
+  loadFacultyAnalytics(); // auto refresh
 }
 
 async function loadFacultyAnalytics() {
@@ -42,11 +49,9 @@ async function loadFacultyAnalytics() {
 
   const color = data.attendance_percentage < 75 ? "red" : "green";
 
-  if (window.facultyChartObj) {
-    window.facultyChartObj.destroy();
-  }
+  if (facultyChartInstance) facultyChartInstance.destroy();
 
-  window.facultyChartObj = new Chart(
+  facultyChartInstance = new Chart(
     document.getElementById("facultyChart"),
     {
       type: "bar",
@@ -61,40 +66,24 @@ async function loadFacultyAnalytics() {
   );
 }
 
-/* ================= STUDENT ================= */
+/* ========= STUDENT DASHBOARD ========= */
 
-async function markAttendance() {
-  const email = document.getElementById("rollInput").value.trim();
-  const sessionId = document.getElementById("sessionInput").value.trim();
-
-  try {
-    const res = await fetch(
-      `${BACKEND}/attendance/mark?session_id=${encodeURIComponent(sessionId)}&student_email=${encodeURIComponent(email)}`,
-      { method: "POST" }
-    );
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.detail);
-      return;
-    }
-
-    alert(data.message);
-
-  } catch (e) {
-    alert("Network error");
-  }
-}
-
-/* ================= STUDENT DASHBOARD ================= */
+let studentChartInstance = null;
 
 async function loadStudentDashboard() {
   const params = new URLSearchParams(window.location.search);
-  const email = params.get("id");
+  const roll = params.get("id");
+
+  if (!roll) {
+    document.getElementById("info").innerText = "No roll number provided";
+    return;
+  }
+
+  document.getElementById("rollLabel").innerText = roll;
+  const email = rollToEmail(roll);
 
   const res = await fetch(
-    `${BACKEND}/analytics/student?student_email=${encodeURIComponent(email)}`
+    `${BACKEND}/analytics/student?student_email=${email}`
   );
   const data = await res.json();
 
@@ -103,11 +92,9 @@ async function loadStudentDashboard() {
 
   const color = data.attendance_percentage < 75 ? "red" : "green";
 
-  if (window.studentChartObj) {
-    window.studentChartObj.destroy();
-  }
+  if (studentChartInstance) studentChartInstance.destroy();
 
-  window.studentChartObj = new Chart(
+  studentChartInstance = new Chart(
     document.getElementById("studentChart"),
     {
       type: "doughnut",
@@ -125,6 +112,7 @@ async function loadStudentDashboard() {
   );
 }
 
+/* Auto-load student dashboard */
 if (document.getElementById("studentChart")) {
   loadStudentDashboard();
 }
