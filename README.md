@@ -29,4 +29,5 @@ A session-based automated attendance system where faculty create time-bound sess
 
 ## Run Locally
 pip install -r requirements.txt
+
 uvicorn main:app --reload
